@@ -1,6 +1,6 @@
 - 👋 Hi, I’m @somik123 (Somik)
 - 👀 I’m interested in programming, server management, simple electronics prototyping, arduino, esp32, raspberry pi, etc.
-- 🌱 I’m currently learning Java, Jeact and Docker.
+- 🌱 I’m currently learning Java, React and Docker.
 - 💞️ I’m looking to collaborate on simple raspberry pi projects.
 - 📫 Reach me over at [my website](https://ziox.us/contact)
 
