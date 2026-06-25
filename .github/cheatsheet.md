@@ -335,6 +335,8 @@ jobs:
 
 ## 📚 Quick‑Reference: Common `uses:` Actions for **Java Spring Boot** & **Python** Projects
 
+URL: https://github.com/marketplace?type=actions
+
 | # | Category | Action (repo) | Typical Use‑Case | Example Snippet |
 |---|----------|----------------|------------------|-----------------|
 | **Core** | |  |  |  |
