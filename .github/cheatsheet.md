@@ -20,6 +20,26 @@
 
 ---
 
+## Trigger (`on:`)
+
+| Trigger | Description | Possible Values |
+|---------|-------------|-----------------|
+| `push` | When commits are pushed to a branch. | `<branch pattern>`, `<tag pattern>`, `paths`, `branches-ignore`, `tags-ignore`, `pull_request` (see below). |
+| `pull_request` | On PR creation, update, or merge. | Same as `push`. |
+| `workflow_dispatch` | Manual run via UI. | `inputs:` – key/value pairs; each input can have a `description`, `required`, `default`. |
+| `repository_dispatch` | Custom event from API. | `types:` – list of strings that identify the event. |
+| `schedule` | Cron schedule (UTC). | `cron: "0 5 * * *"` |
+| `release` | On release actions. | `types:` – `published`, `unpublished`, `prereleased`, etc. |
+| `check_suite` / `check_run` | When a check suite or run completes. | `types:` – `completed`, `requested_action`. |
+| `issue_comment`, `issues`, `label`, `project`, `workflow_call` … | Many more built‑in events; each has its own sub‑fields. |
+
+> **Branch / Tag patterns**  
+> - Use GitHub’s *refspec* syntax: `main`, `develop`, `release/*`, `v[0-9]+.[0-9]+.*`.  
+> - `branches:` and `tags:` accept a list or a single string.  
+> - Wildcards (`*`) are allowed; double‑asterisk (`**`) matches multiple path segments.
+
+---
+
 ## Basic Workflow Example
 
 ```yaml
@@ -333,7 +353,7 @@ jobs:
 ---
 
 
-## 📚 Quick‑Reference: Common `uses:` Actions for **Java Spring Boot** & **Python** Projects
+## 📚 Quick‑Reference: Common `uses:` Actions for **Java Spring Boot** & **Python** Projects
 
 URL: https://github.com/marketplace?type=actions
 
@@ -453,4 +473,3 @@ jobs:
             -t ghcr.io/${{ github.repository }}:${{ github.sha }} \
             --push .
 ```
-
