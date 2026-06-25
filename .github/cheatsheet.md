@@ -328,3 +328,127 @@ jobs:
       - uses: actions/checkout@v4
       - <<: *docker_build   # pulls the whole block
 ```
+
+
+---
+
+
+## 📚 Quick‑Reference: Common `uses:` Actions for **Java Spring Boot** & **Python** Projects
+
+| # | Category | Action (repo) | Typical Use‑Case | Example Snippet |
+|---|----------|----------------|------------------|-----------------|
+| **Core** | |  |  |  |
+| 1 | Checkout code | `actions/checkout@v4` | Pull your repo into the runner. | ```yaml- uses: actions/checkout@v4\n``` |
+| 2 | Set up JDK (Java) | `actions/setup-java@v5` | Install a specific Java version and add Maven/Gradle to PATH. | ```yaml\n- name: Setup JDK\n  uses: actions/setup-java@v5\n  with:\n    distribution: 'temurin'\n    java-version: '21'\n``` |
+| 3 | Set up Python | `actions/setup-python@v5` | Install a specific Python interpreter. | ```yaml\n- name: Setup Python\n  uses: actions/setup-python@v5\n  with:\n    python-version: '3.12'\n``` |
+| **Build / Compile** | |  |  |
+| 4 | Maven build (Java) | `actions/cache@v3` + `mvn -B package --file pom.xml` | Cache `.m2` repository for faster builds. | ```yaml\n- uses: actions/cache@v3\n  with:\n    path: ~/.m2/repository\n    key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}\n``` |
+| 5 | Gradle build (Java) | `gradle/wrapper-validation-action@v1` + `./gradlew build` | Validate wrapper, run Gradle. | ```yaml\n- uses: gradle/wrapper-validation-action@v1\n- name: Build with Gradle\n  run: ./gradlew build --no-daemon\n``` |
+| 6 | Python package install | `pip install -r requirements.txt` (script) or `pip-tools` cache | Cache pip packages. | ```yaml\n- uses: actions/cache@v3\n  with:\n    path: ~/.cache/pip\n    key: ${{ runner.os }}-pip-${{ hashFiles('requirements*.txt') }}\n``` |
+| **Testing** | |  |  |
+| 7 | Maven Surefire (Java) | `mvn test` (script) or `actions/setup-java` + `maven-test-action@v1` | Run unit tests. | ```yaml\n- name: Test with Maven\n  run: mvn -B test\n``` |
+| 8 | Gradle Test | `./gradlew test` | Same for Gradle. | ```yaml\n- name: Test with Gradle\n  run: ./gradlew test --no-daemon\n``` |
+| 9 | PyTest (Python) | `pytest` (script) or `actions/setup-python` + `pytest-action@v2` | Run Python tests. | ```yaml\n- name: Run PyTest\n  run: pytest -q\n``` |
+| 10 | Codecov | `codecov/codecov-action@v4` | Upload coverage reports to Codecov. | ```yaml\n- uses: codecov/codecoord-action@v4\n  with:\n    files: ./coverage.xml\n``` |
+| **Linting / Static Analysis** | |  |  |
+| 11 | Checkstyle (Java) | `checkstyle/ checkstyle-action@v1` | Lint Java source. | ```yaml\n- uses: checkstyle/checkstyle-action@v1\n  with:\n    version: '10.12'\n``` |
+| 12 | SpotBugs (Java) | `spotbugs/spotbugs-action@v2` | Find bugs in bytecode. | ```yaml\n- uses: spotbugs/spotbugs-action@v2\n  with:\n    toolVersion: '4.7.6'\n``` |
+| 13 | Flake8 / Black (Python) | `psf/black@stable` & `pycqa/flake8@v6` | Format & lint Python code. | ```yaml\n- uses: psf/black@stable\n- uses: pycqa/flake8@v6\n``` |
+| **Security** | |  |  |
+| 14 | Trivy (Vulnerability Scan) | `aquasecurity/trivy-action@v0.1` | Scan Docker images or repository for CVEs. | ```yaml\n- uses: aquasecurity/trivy-action@v0.1\n  with:\n    image-ref: myapp:${{ github.sha }}\n``` |
+| 15 | Dependabot Alerts (GitHub native) | `github/dependabot-alerts-action@v2` | Generate SARIF report for GitHub Security tab. | ```yaml\n- uses: github/dependabot-alerts-action@v2\n  with:\n    token: ${{ secrets.GITHUB_TOKEN }}\n``` |
+| **Packaging / Release** | |  |  |
+| 16 | Maven Publish | `mvn deploy` (script) or `gradle publish` | Deploy artifacts to Nexus/Artifactory. | ```yaml\n- name: Deploy Maven artifact\n  run: mvn -B deploy --settings .github/maven-settings.xml\n``` |
+| 17 | Gradle Publishing | `./gradlew publish` | Publish a Gradle library. | ```yaml\n- name: Publish Gradle library\n  run: ./gradlew publish --no-daemon\n``` |
+| 18 | Python Wheels | `pypa/build@v1` + `twine` | Build & upload Python wheel to PyPI. | ```yaml\n- uses: pypa/build@v1\n- name: Publish to PyPI\n  run: twine upload dist/*\n``` |
+| **Docker** | |  |  |
+| 19 | Docker Buildx | `docker/setup-buildx-action@v3` | Build multi‑arch images. | ```yaml\n- uses: docker/setup-buildx-action@v3\n- name: Build image\n  run: |\n    docker buildx build \\\n      --platform linux/amd64,linux/arm64 \\\n      -t ghcr.io/${{ github.repository }}:${{ github.sha }} \\\n      --push .\n``` |
+| **CI/CD Orchestration** | |  |  |
+| 20 | Matrix Strategy (built‑in) | N/A | Run jobs across OS/Java/Python combos. | ```yaml\nstrategy:\n  matrix:\n    os: [ubuntu-latest, windows-2022]\n    java-version: ['17', '21']\n``` |
+| **Artifacts** | |  |  |
+| 21 | Upload Artifacts | `actions/upload-artifact@v4` | Store test reports, logs, or binaries. | ```yaml\n- uses: actions/upload-artifact@v4\n  with:\n    name: test-reports\n    path: target/surefire-reports/**\n``` |
+| 22 | Download Artifacts | `actions/download-artifact@v4` | Retrieve artifacts from previous jobs. | ```yaml\n- uses: actions/download-artifact@v4\n  with:\n    name: test-reports\n``` |
+
+---
+
+### 🚀 How to Pick the Right Action
+
+1. **Language & Build Tool**  
+   * Java → `setup-java`, Maven/Gradle actions, cache `.m2` or Gradle wrapper.  
+   * Python → `setup-python`, pip‑cache, `build` for wheels.
+
+2. **Task**  
+   * Build → `mvn package` / `./gradlew build` / `pip install`.  
+   * Test → unit tests (Maven/Gradle/PyTest).  
+   * Lint → Checkstyle/SpotBugs for Java, Black/Flake8 for Python.  
+   * Publish → Maven Deploy / Gradle publish / Twine upload.
+
+3. **Environment**  
+   * Docker → `setup-buildx` + `docker buildx`.  
+   * Release artifacts → `upload-artifact`.
+
+4. **Security & Compliance**  
+   * Scan dependencies (Dependabot, Trivy).  
+   * Generate SARIF for GitHub Security tab.
+
+---
+
+### 📋 Sample Full Workflow for a Spring Boot App
+
+```yaml
+name: CI / CD
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java-version: ['17', '21']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ---- Java Setup ----
+      - name: Setup JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java-version }}
+
+      # ---- Cache Maven ----
+      - uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      # ---- Build & Test ----
+      - name: Build & test
+        run: mvn -B clean package --file pom.xml
+
+      # ---- Upload test reports ----
+      - uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports-${{ matrix.java-version }}
+          path: target/surefire-reports/**
+
+  publish-docker:
+    needs: build-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && success()
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build & push Docker image
+        run: |
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            -t ghcr.io/${{ github.repository }}:${{ github.sha }} \
+            --push .
+```
+
