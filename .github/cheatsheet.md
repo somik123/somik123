@@ -102,6 +102,64 @@ jobs:
       - run: npm ci && npm test
 ```
 
+```yaml
+# .github/workflows/matrix‑sum.yml
+name: Matrix – simple echo + sum
+
+on:
+  workflow_dispatch:
+
+jobs:
+  # ---------------------------------------------------------------
+  # The matrix job – each row just echos a single number
+  echo_numbers:
+    runs-on: ubuntu-latest          # will be overridden per OS below
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        num: [1, 2, 3, 4, 5]       # each row will have a different number
+
+    steps:
+      - name: Echo the number
+        id: print_num
+        run: |
+          echo "value=${{ matrix.num }}" >> $GITHUB_OUTPUT
+
+      - name: Log it locally (inside this row)
+        run: echo "Running on ${{ matrix.os }} – got ${{
+          steps.print_num.outputs.value
+        }}"
+
+  # ---------------------------------------------------------------
+  # A second job that aggregates all the numbers and prints their sum
+  aggregate_sum:
+    needs: echo_numbers            # depends on every row of the matrix
+    runs-on: ubuntu-latest
+
+    # We’ll read *every* row’s output, sum them in bash,
+    # then expose a final “sum” output.
+    steps:
+      - name: Sum all numbers from the matrix job
+        id: calc_sum
+        run: |
+          # jobs.echo_numbers is an array of 10 rows (2 OS × 5 numbers)
+          # We just need the `value` output from each row.
+          sum=0
+          for i in $(seq 0 $((jobs['echo_numbers'].outputs.length - 1))); do
+            val=${{ jobs.echo_numbers[i].outputs.value }}
+            echo "Row $i value = $val"
+            sum=$((sum + val))
+          done
+          echo "sum=$sum" >> $GITHUB_OUTPUT
+
+      - name: Show the final summed result
+        run: |
+          echo "Total of all numbers (1+2+3+4+5): ${{ steps.calc_sum.outputs.sum }}"
+
+```
+
+
 ### B. **Caching Dependencies**
 
 ```yaml
