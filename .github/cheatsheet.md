@@ -473,3 +473,111 @@ jobs:
             -t ghcr.io/${{ github.repository }}:${{ github.sha }} \
             --push .
 ```
+
+---
+
+## Conditional pipeline
+
+```
+name: Conditional Pipeline Demo
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# The first job that decides what to do.
+jobs:
+  # ----------------------------------------------------
+  # 1 Main pipeline – sets a flag for downstream jobs
+  # ----------------------------------------------------
+  main:
+    runs-on: ubuntu-latest
+    outputs:
+      run_linux: ${{ steps.set_flag.outputs.run_linux }}
+      run_windows: ${{ steps.set_flag.outputs.run_windows }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # Example logic – you can replace this with any
+      # condition (branch, file changes, env var, etc.).
+      - id: set_flag
+        run: |
+          echo "Deciding which build to run..."
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "run_linux=true" >> "$GITHUB_OUTPUT"
+            echo "run_windows=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_linux=false" >> "$GITHUB_OUTPUT"
+            echo "run_windows=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ----------------------------------------------------
+  # 2 Conditional downstream jobs
+  # ----------------------------------------------------
+
+  build_linux:
+    needs: main
+    runs-on: ubuntu-latest
+    if: needs.main.outputs.run_linux == 'true'
+    outputs:
+      artifact_path: ${{ steps.save_artifact.outputs.artifact_path }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Build on Linux
+        run: |
+          echo "Building for Linux..."
+          # Your real build commands go here.
+          mkdir -p build/linux
+          echo "Linux artifact" > build/linux/artifact.txt
+
+      - id: save_artifact
+        run: echo "artifact_path=build/linux" >> "$GITHUB_OUTPUT"
+
+  build_windows:
+    needs: main
+    runs-on: windows-latest
+    if: needs.main.outputs.run_windows == 'true'
+    outputs:
+      artifact_path: ${{ steps.save_artifact.outputs.artifact_path }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Build on Windows
+        shell: pwsh
+        run: |
+          Write-Host "Building for Windows..."
+          # Your real build commands go here.
+          mkdir -p build/windows
+          "Windows artifact" | Out-File -Encoding utf8 build/windows/artifact.txt
+
+      - id: save_artifact
+        run: echo "artifact_path=build/windows" >> "$GITHUB_OUTPUT"
+
+  # ----------------------------------------------------
+  # 3 Final job – runs after *either* of the builds
+  # ----------------------------------------------------
+  final:
+    needs: [build_linux, build_windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge artifacts
+        run: |
+          echo "Collecting artifacts from whichever pipeline ran..."
+          if [[ "${{ needs.build_linux.result }}" == "success" ]]; then
+            cp -r ${{ needs.build_linux.outputs.artifact_path }} ./final_artifacts/
+          else
+            cp -r ${{ needs.build_windows.outputs.artifact_path }} ./final_artifacts/
+          fi
+
+      - name: Archive final artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: merged-build
+          path: final_artifacts/
+
+```
